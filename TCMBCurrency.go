@@ -1,9 +1,13 @@
 package main
 
 import (
+	"encoding/json"
 	"encoding/xml"
+	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"runtime"
 	"strconv"
 	"time"
 )
@@ -41,27 +45,27 @@ type currency struct {
 	Kod             string `xml:"Kod,attr"`
 	CrossOrder      string `xml:"CrossOrder,attr"`
 	CurrencyCode    string `xml:"CurrencyCode,attr"`
-	Unit            string `xml:"Unit,attr"`
-	Isim            string `xml:"Isim,attr"`
-	CurrencyName    string `xml:"CurrencyName,attr"`
-	ForexBuying     string `xml:"ForexBuying,attr"`
-	ForexSelling    string `xml:"ForexSelling,attr"`
-	BanknoteBuying  string `xml:"BanknoteBuying,attr"`
-	BanknoteSelling string `xml:"BanknoteSelling,attr"`
-	CrossRateUSD    string `xml:"CrossRateUSD,attr"`
-	CrossRateOther  string `xml:"CrossRateOther,attr"`
+	Unit            string `xml:"Unit"`
+	Isim            string `xml:"Isim"`
+	CurrencyName    string `xml:"CurrencyName"`
+	ForexBuying     string `xml:"ForexBuying"`
+	ForexSelling    string `xml:"ForexSelling"`
+	BanknoteBuying  string `xml:"BanknoteBuying"`
+	BanknoteSelling string `xml:"BanknoteSelling"`
+	CrossRateUSD    string `xml:"CrossRateUSD"`
+	CrossRateOther  string `xml:"CrossRateOther"`
 }
 
 func (c *CurrencyDay) GetData(CurrencyDate time.Time) {
 
 	xDate := CurrencyDate
 	t := new(tarih_Date)
-	currDay := t.getDate(CurrencyDate, xDate)
+	currDay := t.GetData(CurrencyDate, xDate)
 
 	for {
 		if currDay == nil {
 			CurrencyDate = CurrencyDate.AddDate(0, 0, -1)
-			currDay = t.getDate(CurrencyDate, xDate)
+			currDay := t.GetData(CurrencyDate, xDate)
 			if currDay != nil {
 				break
 			}
@@ -72,7 +76,7 @@ func (c *CurrencyDay) GetData(CurrencyDate time.Time) {
 	}
 }
 
-func (c *tarih_Date) getDate(CurrencyDate time.Time, xDate time.Time) *CurrencyDay {
+func (c *tarih_Date) GetData(CurrencyDate time.Time, xDate time.Time) *CurrencyDay {
 
 	currDay := new(CurrencyDay)
 	var resp *http.Response
@@ -113,7 +117,40 @@ func (c *tarih_Date) getDate(CurrencyDate time.Time, xDate time.Time) *CurrencyD
 			currDay.Currencies[i].CrossRateUSD, err = strconv.ParseFloat(curr.CrossRateUSD, 64)
 			currDay.Currencies[i].CrossRateOther, err = strconv.ParseFloat(curr.CrossRateOther, 64)
 			currDay.Currencies[i].Unit, err = strconv.Atoi(curr.Unit)
-
 		}
+		fmt.Println(currDay)
+		SaveJson("CurrencyDay.json", currDay)
+
+	} else {
+		currDay = nil
 	}
+	return currDay
+}
+
+func SaveJson(fileName string, key interface{}) {
+	outFile, err := os.Create(fileName)
+	CheckError(err)
+	defer outFile.Close()
+	encoder := json.NewEncoder(outFile)
+	err = encoder.Encode(key)
+	CheckError(err)
+}
+
+func CheckError(err error) {
+	if err != nil {
+		fmt.Println("Fatal error ", err.Error())
+		os.Exit(1)
+	}
+}
+
+func main() {
+	runtime.GOMAXPROCS(2)
+	startTime := time.Now()
+	CurrencyDay := new(CurrencyDay)
+	CurrencyDate := time.Now()
+	CurrencyDay.GetData(CurrencyDate)
+
+	elepsedTime := time.Since(startTime)
+	fmt.Println("Time : ", elepsedTime)
+
 }
