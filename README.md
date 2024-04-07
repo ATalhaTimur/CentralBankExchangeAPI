@@ -10,7 +10,7 @@ These instructions will get you a copy of the project up and running on your loc
 
 What things you need to install the software and how to install them:
 
-Go language (version 1.x or higher)
+`Go language (version 1.x or higher)`
 
 
 ### Installing
@@ -23,7 +23,7 @@ git clone https://github.com/ATalhaTimur/CentralBankExchangeAPI
 
 Navigate to the project directory:
 
-cd CentralBankExchangeAPI
+`cd CentralBankExchangeAPI`
 
 ### Usage
 
